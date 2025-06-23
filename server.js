@@ -13,6 +13,11 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
+  next();
+});
+
 
 app.use(
   cors({
@@ -20,7 +25,8 @@ app.use(
   "http://localhost:5173",
   "https://frontend-blog-9h18.vercel.app"
 ],
-credentials: true,           
+credentials: true,
+          
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], 
     allowedHeaders: ["Content-Type", "Authorization"], 
   })
