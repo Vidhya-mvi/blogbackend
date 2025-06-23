@@ -13,38 +13,29 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
-  next();
-});
-
 
 app.use(
   cors({
-   origin: [
-  "http://localhost:5173",
-  "https://frontend-blog-9h18.vercel.app"
-],
-credentials: true,
-          
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], 
-    allowedHeaders: ["Content-Type", "Authorization"], 
+    origin: [
+      "http://localhost:5173",
+      "https://frontend-blog-9h18.vercel.app",
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-connectDB()
+connectDB();
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
 
 app.use("/api/auth", authRoutes);
 app.use("/api", blogRoutes);
 
-
-
 app.get("/", (req, res) => res.send("API is running..."));
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });
