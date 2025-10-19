@@ -141,12 +141,10 @@ const login = async (req, res) => {
       { expiresIn: "7d" } 
     );
 
-    const isProduction = process.env.NODE_ENV === "production";
-
     res
       .cookie("token", token, {
         httpOnly: true,
-         secure: true,   
+        secure: true,   
         sameSite: "None",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       })
@@ -154,12 +152,14 @@ const login = async (req, res) => {
       .json({
         message: "Login successful",
         user: { id: user._id, username: user.username, role: user.role },
+        token, 
       });
   } catch (err) {
     console.error("Login error:", err.message);
     res.status(500).json({ message: "Login failed. Please try again." });
   }
 };
+
 
 
 const getCurrentUser = (req, res) => {
