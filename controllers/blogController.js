@@ -45,70 +45,77 @@ const getBlogs = async (req, res) => {
       .populate("comments.postedBy", "username")
       .sort({ createdAt: -1 });
 
-    res.status(200).json(blogs);
+    
+    res.status(200).json(blogs || []);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch blogs" });
   }
 };
 
+// Get blogs by genre
 const getBlogsByGenre = async (req, res) => {
-    try {
-        const genre = req.params.genre;
-        const blogs = await Blog.find({ genre: { $regex: new RegExp(genre, "i") } })
-            .populate("postedBy", "username");
+  try {
+    const genre = req.params.genre;
+    const blogs = await Blog.find({ genre: { $regex: new RegExp(genre, "i") } })
+      .populate("postedBy", "username");
 
-        if (!blogs.length) {
-            return res.status(404).json({ message: "No blogs found for this genre" });
-        }
-
-        res.json(blogs);
-    } catch (error) {
-        console.error("Error fetching blogs by genre:", error);
-        res.status(500).json({ message: "Server error" });
-    }
+ 
+    res.status(200).json(blogs || []);
+  } catch (error) {
+    console.error("Error fetching blogs by genre:", error);
+    res.status(500).json({ message: "Server error" });
+  }
 };
 
-// Get a single blog by ID
-const getBlogById = async (req, res) => {
-    try {
-        const blog = await Blog.findById(req.params.id)
-            .populate("postedBy", "username")
-            .populate("comments.postedBy", "username");
-
-        if (!blog) return res.status(404).json({ message: "Blog not found" });
-
-        res.status(200).json(blog);
-    } catch (err) {
-        if (err.name === 'CastError') {
-            return res.status(400).json({ error: "Invalid blog ID format" });
-        }
-        console.error("Failed to fetch the blog:", err.message);
-        res.status(500).json({ error: "Failed to fetch the blog" });
-    }
-};
-
+// Get blogs for a specific user
 const getUserBlogs = async (req, res) => {
-    try {
-        const { userId } = req.params;
+  try {
+    const { userId } = req.params;
+    if (!userId) return res.status(400).json({ message: "User ID is missing" });
 
-        if (!userId) {
-            return res.status(400).json({ message: "User ID is missing" });
-        }
+    const blogs = await Blog.find({ postedBy: userId })
+      .populate("postedBy", "username email");
 
-        const blogs = await Blog.find({ postedBy: userId })
-            .populate("postedBy", "username email");
-
-        if (!blogs.length) return res.status(404).json({ message: "No blogs found for this user" });
-
-        res.status(200).json(blogs);
-    } catch (error) {
-         if (error.name === 'CastError') {
-            return res.status(400).json({ error: "Invalid user ID format" });
-        }
-        console.error("Error fetching user blogs:", error);
-        res.status(500).json({ message: "Server error" });
+   
+    res.status(200).json(blogs || []);
+  } catch (error) {
+    if (error.name === 'CastError') {
+      return res.status(400).json({ error: "Invalid user ID format" });
     }
+    console.error("Error fetching user blogs:", error);
+    res.status(500).json({ message: "Server error" });
+  }
 };
+
+// Search blogs
+const searchBlogs = async (req, res) => {
+  try {
+    let { query } = req.query;
+
+    if (!query || query.trim() === "") {
+      return res.status(400).json({ message: "Search query is required" });
+    }
+
+    query = query.trim();
+    const escapeRegExp = (text) => text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+    const safeQuery = escapeRegExp(query);
+
+    const blogs = await Blog.find({
+      $or: [
+        { title: { $regex: safeQuery, $options: "i" } },
+        { content: { $regex: safeQuery, $options: "i" } },
+        { genre: { $regex: safeQuery, $options: "i" } },
+      ],
+    }).populate("postedBy", "username");
+
+
+    res.status(200).json(blogs || []);
+  } catch (error) {
+    console.error("Error searching blogs:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 
 // Update blog 
 const updateBlog = async (req, res) => {
@@ -129,6 +136,25 @@ const updateBlog = async (req, res) => {
     console.error("Error updating blog:", err);
     res.status(500).json({ message: "Failed to update blog" });
   }
+};
+
+// Get a single blog by ID
+const getBlogById = async (req, res) => {
+    try {
+        const blog = await Blog.findById(req.params.id)
+            .populate("postedBy", "username")
+            .populate("comments.postedBy", "username");
+
+        if (!blog) return res.status(404).json({ message: "Blog not found" });
+
+        res.status(200).json(blog);
+    } catch (err) {
+        if (err.name === 'CastError') {
+            return res.status(400).json({ error: "Invalid blog ID format" });
+        }
+        console.error("Failed to fetch the blog:", err.message);
+        res.status(500).json({ error: "Failed to fetch the blog" });
+    }
 };
 // Delete a blog
 const deleteBlog = async (req, res) => {
@@ -256,36 +282,6 @@ const getAllUsers = async (req, res) => {
     }
 };
 
-const searchBlogs = async (req, res) => {
-    try {
-        let { query } = req.query;
-
-        if (!query || query.trim() === "") {
-            return res.status(400).json({ message: "Search query is required" });
-        }
-
-        query = query.trim();
-        const escapeRegExp = (text) => text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
-        const safeQuery = escapeRegExp(query);
-
-        const blogs = await Blog.find({
-            $or: [
-                { title: { $regex: safeQuery, $options: "i" } },
-                { content: { $regex: safeQuery, $options: "i" } }, 
-                { genre: { $regex: safeQuery, $options: "i" } },
-            ],
-        }).populate("postedBy", "username");
-
-        if (!blogs.length) {
-            return res.status(404).json({ message: "No matching blogs found" });
-        }
-
-        res.json(blogs);
-    } catch (error) {
-        console.error("Error searching blogs:", error);
-        res.status(500).json({ message: "Server error", error: error.message });
-    }
-};
 
 
 module.exports = {
