@@ -121,46 +121,46 @@ const verifyOTP = async (req, res) => {
 
 // LOGIN
 const login = async (req, res) => {
-    const { email, password } = req.body;
+  const { email, password } = req.body;
 
-    try {
-        console.log("Login attempt:", { email });
+  try {
+    console.log("Login attempt:", { email });
 
-        const user = await User.findOne({ email });
-        if (!user) return res.status(404).json({ message: "User not found" });
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(400).json({ message: "Invalid password" });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ message: "Invalid password" });
 
-        if (!user.isVerified)
-            return res.status(403).json({ message: "Please verify your email first" });
+    if (!user.isVerified)
+      return res.status(403).json({ message: "Please verify your email first" });
 
-        const token = jwt.sign(
-            { id: user._id, username: user.username, role: user.role },
-            process.env.JWT_SECRET,
-            { expiresIn: "1h" }
-        );
+    const token = jwt.sign(
+      { id: user._id, username: user.username, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" } 
+    );
 
-        const isProduction = process.env.NODE_ENV === "production";
+    const isProduction = process.env.NODE_ENV === "production";
 
-        res
-            .cookie("token", token, {
-                httpOnly: true,
-                secure: isProduction,
-                sameSite: isProduction ? "none" : "lax", 
-                maxAge: 3600000,
-            })
-            .status(200)
-            .json({
-                message: "Login successful",
-             
-                user: { id: user._id, username: user.username, role: user.role },
-            });
-    } catch (err) {
-        console.error("Login error:", err.message);
-        res.status(500).json({ message: "Login failed. Please try again." });
-    }
+    res
+      .cookie("token", token, {
+        httpOnly: true,
+        secure: isProduction,      
+        sameSite: isProduction ? "None" : "Lax", 
+        maxAge: 7 * 24 * 60 * 60 * 1000, 
+      })
+      .status(200)
+      .json({
+        message: "Login successful",
+        user: { id: user._id, username: user.username, role: user.role },
+      });
+  } catch (err) {
+    console.error("Login error:", err.message);
+    res.status(500).json({ message: "Login failed. Please try again." });
+  }
 };
+
 
 const getCurrentUser = (req, res) => {
   try {
