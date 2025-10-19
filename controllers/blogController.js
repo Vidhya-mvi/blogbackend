@@ -37,31 +37,18 @@ const createBlog = async (req, res) => {
     }
 };
 
-// Get all blogs with PAGINATION 
+// Get all blogs
 const getBlogs = async (req, res) => {
-    try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
-        const skip = (page - 1) * limit;
+  try {
+    const blogs = await Blog.find()
+      .populate("postedBy", "username")
+      .populate("comments.postedBy", "username")
+      .sort({ createdAt: -1 });
 
-        const totalBlogs = await Blog.countDocuments({});
-
-        const blogs = await Blog.find()
-            .populate("postedBy", "username")
-            .populate("comments.postedBy", "username")
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit);
-            
-        res.status(200).json({
-            blogs,
-            totalPages: Math.ceil(totalBlogs / limit),
-            currentPage: page,
-        });
-    } catch (err) {
-        console.error("Error fetching blogs:", err);
-        res.status(500).json({ error: "Failed to fetch blogs" });
-    }
+    res.status(200).json(blogs);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch blogs" });
+  }
 };
 
 const getBlogsByGenre = async (req, res) => {
