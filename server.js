@@ -16,6 +16,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 const allowedOrigins = [
+  "https://blog-frontend-snowy.vercel.app",
   "http://localhost:5173"
 ];
 
