@@ -112,35 +112,24 @@ const getUserBlogs = async (req, res) => {
 
 // Update blog 
 const updateBlog = async (req, res) => {
-    try {
-        const { title, content, genre } = req.body;
-        const updatedData = { title, content, genre };
-        const blogId = req.params.id;
+  try {
+    const { title, content, genre } = req.body;
+    const updatedData = { title, content, genre };
 
-        const blog = await Blog.findById(blogId);
-        if (!blog) return res.status(404).json({ message: "Blog not found" });
-
-        if (blog.postedBy.toString() !== req.user.id && req.user.role !== "admin") {
-            return res.status(403).json({ message: "Not authorized to update this blog" });
-        }
-
-     
-        if (req.file) {
-            updatedData.image = getImageUrl(req);
-        }
-
-        const updatedBlog = await Blog.findByIdAndUpdate(blogId, updatedData, { new: true });
-
-        res.json(updatedBlog);
-    } catch (err) {
-        if (err.name === 'CastError') {
-            return res.status(400).json({ error: "Invalid blog ID format" });
-        }
-        console.error("Error updating blog:", err);
-        res.status(500).json({ message: "Failed to update blog" });
+    if (req.file) {
+      updatedData.image = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
     }
-};
 
+    const updatedBlog = await Blog.findByIdAndUpdate(req.params.id, updatedData, { new: true });
+
+    if (!updatedBlog) return res.status(404).json({ message: "Blog not found" });
+
+    res.json(updatedBlog);
+  } catch (err) {
+    console.error("Error updating blog:", err);
+    res.status(500).json({ message: "Failed to update blog" });
+  }
+};
 // Delete a blog
 const deleteBlog = async (req, res) => {
     try {
