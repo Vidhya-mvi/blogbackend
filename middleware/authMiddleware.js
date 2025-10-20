@@ -2,15 +2,18 @@ const jwt = require("jsonwebtoken");
 
 const authMiddleware = (req, res, next) => {
     try {
-      const token = req.headers.authorization?.startsWith("Bearer ")
-  ? req.headers.authorization.split(" ")[1]
-  : null;
+        const token = req.cookies?.token;
 
-if (!token) return res.status(401).json({ message: "No token, authorization denied" });
+        if (!token) {
+            return res.status(401).json({ message: "No token, authorization denied" });
+        }
 
-const decoded = jwt.verify(token, process.env.JWT_SECRET);
-req.user = decoded;
-next();
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        req.user = decoded;
+        console.log("Authenticated User ID:", req.user.id);
+
+        next();
     } catch (err) {
         if (err.name === 'TokenExpiredError') {
             console.error(" Token verification failed: Token has expired.", err.message);
