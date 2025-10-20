@@ -3,10 +3,10 @@ const User = require("../models/user");
 
 
 const getImageUrl = (req) => {
-    if (!req.file) return "";
-
-    return req.file.path;
+  if (!req.file) return "";
+  return req.file.path || req.file.secure_url || "";
 };
+
 
 
 // Create a new blog 
